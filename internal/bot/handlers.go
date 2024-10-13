@@ -3,8 +3,10 @@ package bot
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/somuthink/sirius_weather_bot/internal/db"
 	"github.com/somuthink/sirius_weather_bot/internal/weather"
 )
 
@@ -32,8 +34,8 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 
 		confirmKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("✅", fmt.Sprintf("%s%d", "y", sent_msg.MessageID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌", fmt.Sprintf("%s%d", "n", sent_msg.MessageID)),
+				tgbotapi.NewInlineKeyboardButtonData("✅", fmt.Sprintf("y,%s,%d", city, sent_msg.MessageID)),
+				tgbotapi.NewInlineKeyboardButtonData("❌", fmt.Sprintf("n,%s,%d", city, sent_msg.MessageID)),
 			))
 		msg_edited.ReplyMarkup = &confirmKeyboard
 		UserState[update.Message.From.ID] = "confirm"
@@ -53,9 +55,9 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 }
 
 func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
-	callbackData := update.CallbackData()
+	callbackData := strings.Split(update.CallbackData(), ",")
 	confirm := callbackData[0]
-	messageID, err := strconv.Atoi(callbackData[1:])
+	messageID, err := strconv.Atoi(callbackData[2])
 	if err != nil {
 		return err
 	}
@@ -63,7 +65,10 @@ func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	switch string(confirm) {
 	case "y":
 		UserState[update.CallbackQuery.From.ID] = "idle"
-		text = "Succesufly set"
+		if err := db.InserUser(update.CallbackQuery.From.ID, callbackData[1]); err != nil {
+			return err
+		}
+		text = fmt.Sprintf("succefully set city to %s", callbackData[1])
 	case "n":
 		UserState[update.CallbackQuery.From.ID] = "input"
 		text = "Type city name again"

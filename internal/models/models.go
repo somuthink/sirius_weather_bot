@@ -4,11 +4,12 @@ import "gorm.io/gorm"
 
 type TimeTable struct {
 	gorm.Model
-	ID                                        int
+	ID                                        uint `gorm:"primaryKey;not null"`
 	Minute, Hour, Morning, Afternoon, Evening int64
 }
 
 type Users struct {
-	Tg_id int64
+	ID    uint  `gorm:"primaryKey;not null"`
+	Tg_id int64 `gorm:"UNIQUE"`
 	City  string
 }

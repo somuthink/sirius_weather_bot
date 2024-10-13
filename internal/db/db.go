@@ -9,13 +9,14 @@ import (
 var DB *gorm.DB
 
 func Initialize() error {
+
 	var err error
 	DB, err = gorm.Open(sqlite.Open("data/gorm.db"), &gorm.Config{})
 	if err != nil {
 		return err
 	}
 
-	err = DB.AutoMigrate(&models.TimeTable{})
+	err = DB.AutoMigrate(&models.Users{}, &models.TimeTable{})
 	if err != nil {
 		return err
 	}
