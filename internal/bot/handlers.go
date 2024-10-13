@@ -20,7 +20,9 @@ func Start(bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+	chatId := update.Message.Chat.ID
+
+	msg := tgbotapi.NewMessage(chatId, "")
 	city, err := weather.CheckCityExists(update.Message.Text)
 
 	if err == nil {
@@ -30,7 +32,7 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 		if err != nil {
 			return err
 		}
-		msg_edited := tgbotapi.NewEditMessageText(update.Message.Chat.ID, sent_msg.MessageID, text)
+		msg_edited := tgbotapi.NewEditMessageText(chatId, sent_msg.MessageID, text)
 
 		confirmKeyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
@@ -38,7 +40,7 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 				tgbotapi.NewInlineKeyboardButtonData("❌", fmt.Sprintf("n,%s,%d", city, sent_msg.MessageID)),
 			))
 		msg_edited.ReplyMarkup = &confirmKeyboard
-		UserState[update.Message.From.ID] = "confirm"
+		UserState[chatId] = "confirm"
 		_, err = bot.Send(msg_edited)
 		return err
 	} else if err == weather.ErrNotExistingCity {
@@ -54,8 +56,34 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 
 }
 
+func Choose(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
+
+	chatId := update.Message.Chat.ID
+
+	msg := tgbotapi.NewMessage(chatId, "choose weather sending timetable")
+
+	chooseKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔄Every Minute", fmt.Sprintf("minute")),
+		),
+
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🌅Morning", fmt.Sprintf("morning")),
+			tgbotapi.NewInlineKeyboardButtonData("🌇Afternoon", fmt.Sprintf("afternoon")),
+			tgbotapi.NewInlineKeyboardButtonData("🌃Evening", fmt.Sprintf("evening")),
+		),
+	)
+
+	msg.ReplyMarkup = chooseKeyboard
+
+	_, err := bot.Send(msg)
+
+	return err
+}
+
 func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	callbackData := strings.Split(update.CallbackData(), ",")
+	userId := update.CallbackQuery.From.ID
 	confirm := callbackData[0]
 	messageID, err := strconv.Atoi(callbackData[2])
 	if err != nil {
@@ -64,14 +92,14 @@ func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	var text string
 	switch string(confirm) {
 	case "y":
-		UserState[update.CallbackQuery.From.ID] = "idle"
-		if err := db.InserUser(update.CallbackQuery.From.ID, callbackData[1]); err != nil {
+		if err := db.InsertUsers(userId, callbackData[1]); err != nil {
 			return err
 		}
 		text = fmt.Sprintf("succefully set city to %s", callbackData[1])
+		UserState[userId] = "choose"
 	case "n":
-		UserState[update.CallbackQuery.From.ID] = "input"
 		text = "Type city name again"
+		UserState[userId] = "input"
 	}
 	msg := tgbotapi.NewEditMessageText(update.FromChat().ChatConfig().ChatID, messageID, text)
 	_, err = bot.Send(msg)

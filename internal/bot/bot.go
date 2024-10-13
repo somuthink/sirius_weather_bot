@@ -56,8 +56,14 @@ func HandleUpdates() {
 		}
 
 		state, _ := UserState[update.Message.From.ID]
-		if state == "input" {
+		switch state {
+		case "input":
 			if err := Input(bot, update); err != nil {
+				log.Fatal(err)
+			}
+			continue
+		case "choose":
+			if err := Choose(bot, update); err != nil {
 				log.Fatal(err)
 			}
 			continue
