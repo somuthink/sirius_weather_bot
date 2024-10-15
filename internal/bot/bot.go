@@ -10,13 +10,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var (
-	// Bot       *tgbotapi.BotAPI
-	UserState map[int64]string
-)
+// Bot       *tgbotapi.BotAPI
+var UserState map[int64]string
 
 func HandleUpdates() {
-
 	UserState = make(map[int64]string)
 
 	err := godotenv.Load()
@@ -27,7 +24,6 @@ func HandleUpdates() {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
-
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
@@ -46,10 +42,13 @@ func HandleUpdates() {
 
 			switch state {
 			case "confirm":
-				err := CallbackConfirm(bot, update)
-				if err != nil {
-					log.Print(err)
-				}
+				err = CallbackConfirm(bot, update)
+			case "choose":
+				err = CallbackChoose(bot, update)
+			}
+
+			if err != nil {
+				log.Print(err)
 			}
 
 			continue
@@ -62,13 +61,7 @@ func HandleUpdates() {
 				log.Fatal(err)
 			}
 			continue
-		case "choose":
-			if err := Choose(bot, update); err != nil {
-				log.Fatal(err)
-			}
-			continue
 		}
-
 		if !update.Message.IsCommand() && state == "idle" {
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "sry, i work only with commands"))
 		}

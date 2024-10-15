@@ -7,14 +7,12 @@ import (
 )
 
 func InsertUsers(userId int64, city string) error {
-
 	err := DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "tg_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"city"}),
 	}).Create(&models.Users{Tg_id: userId, City: city}).Error
 
 	return err
-
 }
 
 func SelectUserCity(userId int64) (string, error) {
@@ -22,5 +20,4 @@ func SelectUserCity(userId int64) (string, error) {
 	err := DB.First(&user, "tg_id=?", userId).Error
 
 	return user.City, err
-
 }
