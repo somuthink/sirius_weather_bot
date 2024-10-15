@@ -13,8 +13,12 @@ func SelectUserTimeTable(chatId int64) (models.TimeTable, error) {
 }
 
 func InsertUserTimeTable(chatId int64, time string, val bool) error {
-	var timeTable models.TimeTable
-	err := DB.Model(&timeTable).Where("tg_id=?", chatId).Update(time, val).Error
+	err := DB.Model(models.TimeTable{}).Where("tg_id=?", chatId).Update(time, val).Error
 
 	return err
+}
+
+func SelectAllTimeUsers(time string) ([]int64, error) {
+	var res []int64
+	return res, DB.Model(models.TimeTable{}).Select(time).Find(&res).Error
 }
