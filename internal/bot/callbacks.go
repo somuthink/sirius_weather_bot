@@ -12,7 +12,7 @@ import (
 
 func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	callbackData := strings.Split(update.CallbackData(), ",")
-	userId := update.CallbackQuery.From.ID
+	chatId := update.FromChat().ChatConfig().ChatID
 	confirm := callbackData[0]
 	messageId, err := strconv.Atoi(callbackData[2])
 	if err != nil {
@@ -21,14 +21,14 @@ func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	var text string
 	switch string(confirm) {
 	case "y":
-		if err := db.InsertUsers(userId, callbackData[1]); err != nil {
+		if err := db.InsertUsers(chatId, callbackData[1]); err != nil {
 			return err
 		}
 		text = fmt.Sprintf("succefully set city to %s", callbackData[1])
 		defer Choose(bot, update)
 	case "n":
 		text = "Type city name again"
-		UserState[userId] = "input"
+		UserState[chatId] = "input"
 	}
 	msg := tgbotapi.NewEditMessageText(update.FromChat().ChatConfig().ChatID, messageId, text)
 	_, err = bot.Send(msg)
@@ -52,9 +52,9 @@ func getButtonQuery(timeName string, isActive bool, messageId int) string {
 	}
 }
 
-func ChooseKeyboardBuilder(userId int64, messageId int) (tgbotapi.InlineKeyboardMarkup, error) {
+func ChooseKeyboardBuilder(chatId int64, messageId int) (tgbotapi.InlineKeyboardMarkup, error) {
 	var chooseKeyboard tgbotapi.InlineKeyboardMarkup
-	timetable, err := db.SelectUserTimeTable(userId)
+	timetable, err := db.SelectUserTimeTable(chatId)
 
 	if err == gorm.ErrRecordNotFound {
 		fmt.Println("record not found")

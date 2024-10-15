@@ -51,14 +51,7 @@ func Input(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 }
 
 func Choose(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
-	var userId int64
 	chatId := update.FromChat().ChatConfig().ChatID
-
-	if update.Message != nil {
-		userId = update.Message.From.ID
-	} else {
-		userId = update.CallbackQuery.From.ID
-	}
 
 	msg := tgbotapi.NewMessage(chatId, "choose weather sending timetable")
 
@@ -68,7 +61,7 @@ func Choose(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 	if err != nil {
 		return err
 	}
-	chooseKeyboard, err := ChooseKeyboardBuilder(userId, sent_msg.MessageID)
+	chooseKeyboard, err := ChooseKeyboardBuilder(chatId, sent_msg.MessageID)
 	if err != nil {
 		return err
 	}
