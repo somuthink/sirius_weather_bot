@@ -8,9 +8,9 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
+	"github.com/somuthink/sirius_weather_bot/internal/sheduler"
 )
 
-// Bot       *tgbotapi.BotAPI
 var UserState map[int64]string
 
 func HandleUpdates() {
@@ -26,6 +26,8 @@ func HandleUpdates() {
 		log.Fatal(err)
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	go sheduler.StartTickers(bot)
 
 	u := tgbotapi.NewUpdate(0)
 	// u.AllowedUpdates = []string{"callback_query", "message"}
@@ -66,8 +68,11 @@ func HandleUpdates() {
 			bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, "sry, i work only with commands"))
 		}
 
-		if update.Message.Command() == "start" {
+		switch update.Message.Command() {
+		case "start":
 			Start(bot, update)
+		case "choose":
+			Choose(bot, update)
 		}
 
 		fmt.Println()

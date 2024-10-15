@@ -1,28 +1,46 @@
 package sheduler
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/somuthink/sirius_weather_bot/internal/bot"
 	"github.com/somuthink/sirius_weather_bot/internal/db"
+	"github.com/somuthink/sirius_weather_bot/internal/weather"
 )
 
-func sendMessage(time string) error {
+func sendWeather(bot *tgbotapi.BotAPI, time string) error {
 	chatIds, err := db.SelectAllTimeUsers(time)
 	if err != nil {
 		return err
 	}
-
 	for _, chatId := range chatIds {
-		bot.Send(tgbotapi.NewMessage(chatId, "minute"))
+		city, err := db.SelectUserCity(chatId)
+		if err != nil {
+			return err
+		}
+
+		weather_resp, err := weather.WeatherRequest(city)
+		if err != nil {
+			return err
+		}
+
+		text := fmt.Sprintf("~~ %s%s ~~\n \ncurrent temperature in *%s* is `%.2f°C` \n\nto change frequency of messages type /choose", weather_resp.Current.Condition.Text, weather_resp.GetConditionEmoji(), city, weather_resp.Current.Temp_c)
+
+		msg := tgbotapi.NewMessage(chatId, text)
+		msg.ParseMode = "Markdown"
+
+		if _, err := bot.Send(msg); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func StartTickers() {
-	minuteTicker := time.NewTicker(3 * time.Second)
+func StartTickers(bot *tgbotapi.BotAPI) {
+	minuteTicker := time.NewTicker(60 * time.Second)
 	defer minuteTicker.Stop()
 
 	morningTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 8, 0, 0, 0, time.Local)
@@ -45,20 +63,24 @@ func StartTickers() {
 	}
 	eveningTicker := time.NewTicker(eveningTime.Sub(time.Now()))
 	defer eveningTicker.Stop()
-
+	var err error
 	for {
 		select {
 		case <-minuteTicker.C:
-			sendMessage("Minute")
+			err = sendWeather(bot, "minute")
 		case <-morningTicker.C:
-			sendMessage("Morning")
+			err = sendWeather(bot, "morning")
 			morningTicker.Reset(24 * time.Hour)
 		case <-afternoonTicker.C:
-			sendMessage("Afternoon")
+			err = sendWeather(bot, "afternoon")
 			afternoonTicker.Reset(24 * time.Hour)
 		case <-eveningTicker.C:
-			sendMessage("Evening")
+			err = sendWeather(bot, "evening")
 			eveningTicker.Reset(24 * time.Hour)
+		}
+
+		if err != nil {
+			log.Print(err)
 		}
 	}
 }

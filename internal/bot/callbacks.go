@@ -24,7 +24,7 @@ func CallbackConfirm(bot *tgbotapi.BotAPI, update tgbotapi.Update) error {
 		if err := db.InsertUsers(chatId, callbackData[1]); err != nil {
 			return err
 		}
-		text = fmt.Sprintf("succefully set city to %s", callbackData[1])
+		text = fmt.Sprintf("succefully set city to %s\nif you want to reset, type /start again", callbackData[1])
 		defer Choose(bot, update)
 	case "n":
 		text = "Type city name again"
