@@ -36,7 +36,7 @@ type Weather struct {
 func RequestBuilder() string {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Print("Error loading .env file")
 	}
 
 	return fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s", os.Getenv("WEATHER_TOKEN"))

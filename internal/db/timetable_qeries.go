@@ -9,8 +9,8 @@ import (
 )
 
 func SelectUserTimeTable(chatId int64) (models.TimeTable, error) {
-	timeTable := models.TimeTable{Tg_id: chatId}
-	err := DB.FirstOrCreate(&timeTable).Error
+	var timeTable models.TimeTable
+	err := DB.Where(models.TimeTable{Tg_id: chatId}).FirstOrCreate(&timeTable).Error
 	return timeTable, err
 }
 

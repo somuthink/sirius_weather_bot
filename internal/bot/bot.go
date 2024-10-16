@@ -1,13 +1,12 @@
 package bot
 
 import (
-	// "fmt"
-	"fmt"
 	"log"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
+	"github.com/somuthink/sirius_weather_bot/internal/pkg"
 	"github.com/somuthink/sirius_weather_bot/internal/sheduler"
 )
 
@@ -18,7 +17,7 @@ func HandleUpdates() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Print("Error loading .env file")
 	}
 
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
@@ -73,9 +72,9 @@ func HandleUpdates() {
 			Start(bot, update)
 		case "choose":
 			Choose(bot, update)
+		case "current":
+			pkg.CurrentWeather(bot, update.FromChat().ChatConfig().ChatID)
 		}
-
-		fmt.Println()
 
 	}
 }
